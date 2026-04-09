@@ -1,0 +1,41 @@
+# Default behavior, in case users don't have core.autocrlf set.
+* text=auto
+
+# Source code files
+*.swift text eol=lf
+*.h text eol=lf
+*.m text eol=lf
+*.c text eol=lf
+*.cpp text eol=lf
+
+# Text files
+*.md text
+*.txt text
+*.rtf text
+*.json text
+*.plist text
+*.yml text
+*.yaml text
+
+# Image & Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.icns binary
+*.pdf binary
+*.ttf binary
+*.otf binary
+*.zip binary
+*.ipa binary
+*.cer binary
+*.p12 binary
+*.mobileprovision binary
+
+# Xcode-specific files
+*.xib merge=union
+*.storyboard merge=union
+*.pbxproj merge=union
+*.xcworkspacedata merge=union
+*.xcscheme merge=union
+*.xccheckout merge=union
