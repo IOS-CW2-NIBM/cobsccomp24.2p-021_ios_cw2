@@ -84,3 +84,13 @@ tvOSInjectionProject/
 
 # OS X environment defaults
 .DS_Store
+
+# Windows system files
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Line endings
+*.swift text eol=lf
+*.m text eol=lf
+*.h text eol=lf
