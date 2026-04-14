@@ -3,7 +3,26 @@
     <entity name="Item" representedClassName="Item" syncable="YES" codeGenerationType="class">
         <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
     </entity>
+    <entity name="BookingEntity" representedClassName="BookingEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="id"            optional="NO"  attributeType="UUID"    usesScalarValueType="NO"/>
+        <attribute name="customerId"    optional="NO"  attributeType="UUID"    usesScalarValueType="NO"/>
+        <attribute name="workerId"      optional="NO"  attributeType="UUID"    usesScalarValueType="NO"/>
+        <attribute name="categoryId"    optional="NO"  attributeType="UUID"    usesScalarValueType="NO"/>
+        <attribute name="workerName"    optional="NO"  attributeType="String"/>
+        <attribute name="categoryName"  optional="NO"  attributeType="String"/>
+        <attribute name="scheduledDate" optional="NO"  attributeType="Date"    usesScalarValueType="NO"/>
+        <attribute name="durationHours" optional="NO"  attributeType="Integer 32" defaultValueString="1" usesScalarValueType="YES"/>
+        <attribute name="status"        optional="NO"  attributeType="String"  defaultValueString="pending"/>
+        <attribute name="baseAmount"    optional="NO"  attributeType="Double"  defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="platformFee"   optional="NO"  attributeType="Double"  defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="totalAmount"   optional="NO"  attributeType="Double"  defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="notes"         optional="YES" attributeType="String"  defaultValueString=""/>
+        <attribute name="address"       optional="NO"  attributeType="String"/>
+        <attribute name="createdAt"     optional="NO"  attributeType="Date"    usesScalarValueType="NO"/>
+        <attribute name="calendarEventId" optional="YES" attributeType="String"/>
+    </entity>
     <elements>
-        <element name="Item" positionX="-63" positionY="-18" width="128" height="44"/>
+        <element name="Item"          positionX="-63"  positionY="-18"  width="128" height="44"/>
+        <element name="BookingEntity" positionX="100"  positionY="-18"  width="128" height="300"/>
     </elements>
 </model>

@@ -397,6 +397,13 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "Supportives would like to save your bookings to your Calendar.";
+				INFOPLIST_KEY_NSCalendarsWriteOnlyAccessUsageDescription = "Supportives would like to save your bookings to your Calendar.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Supportives uses the camera to take your verification selfie.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Supportives uses Face ID to securely unlock the app.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Supportives uses your location to show nearby service providers.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Supportives uses your location to show nearby service providers.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Supportives needs access to your Photo Library for identity verification.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -428,6 +435,13 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "Supportives would like to save your bookings to your Calendar.";
+				INFOPLIST_KEY_NSCalendarsWriteOnlyAccessUsageDescription = "Supportives would like to save your bookings to your Calendar.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Supportives uses the camera to take your verification selfie.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Supportives uses Face ID to securely unlock the app.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Supportives uses your location to show nearby service providers.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Supportives uses your location to show nearby service providers.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Supportives needs access to your Photo Library for identity verification.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
