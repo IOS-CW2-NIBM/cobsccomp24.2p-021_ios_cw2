@@ -1,86 +1,152 @@
-//
-//  ContentView.swift
-//  IOS_CW2_Supportives
-//
-//  Created by user3 on 09/04/2026.
-//
+// ContentView.swift
+// IOS_CW2_Supportives
+// Root navigator — Splash → Onboarding → Auth → MainTabView
+// + Biometric lock overlay when user returns to an existing session.
 
 import SwiftUI
-import CoreData
+import Combine
+
 
 struct ContentView: View {
-    @Environment(\.managedObjectContext) private var viewContext
-
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
-        animation: .default)
-    private var items: FetchedResults<Item>
+    @EnvironmentObject var appState: AppState
+    @State private var showSplash     = true
+    @State private var showOnboarding = false
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        NavigationView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp!, formatter: itemFormatter)")
-                    } label: {
-                        Text(item.timestamp!, formatter: itemFormatter)
-                    }
+        ZStack {
+            // MARK: - Normal navigation stack
+            if showSplash {
+                SplashView()
+                    .transition(.opacity)
+                    .zIndex(2)
+            } else if showOnboarding {
+                OnboardingView {
+                    appState.hasSeenOnboarding = true
+                    withAnimation(.easeInOut(duration: 0.4)) { showOnboarding = false }
                 }
-                .onDelete(perform: deleteItems)
+                .transition(.opacity)
+                .zIndex(1)
+            } else {
+                switch appState.authState {
+                case .unauthenticated, .awaitingOTP:
+                    PhoneEntryView()
+                        .environmentObject(appState)
+                        .transition(.opacity)
+
+                case .authenticated:
+                    MainTabView()
+                        .environmentObject(appState)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal:   .opacity
+                        ))
+                }
             }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
+
+            // MARK: - Biometric lock overlay
+            if appState.requiresBiometricUnlock {
+                BiometricLockOverlay()
+                    .environmentObject(appState)
+                    .transition(.opacity)
+                    .zIndex(10)
             }
-            Text("Select an item")
         }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
+        .animation(.easeInOut(duration: 0.35), value: appState.authState)
+        .animation(.easeInOut(duration: 0.40), value: showSplash)
+        .animation(.easeInOut(duration: 0.40), value: showOnboarding)
+        .animation(.easeInOut(duration: 0.25), value: appState.requiresBiometricUnlock)
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + AppConstants.splashDuration) {
+                withAnimation { showSplash = false }
+                if !appState.hasSeenOnboarding {
+                    withAnimation { showOnboarding = true }
+                }
             }
+            Task { await appState.notificationService.requestPermission() }
+            appState.locationService.requestPermission()
         }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            offsets.map { items[$0] }.forEach(viewContext.delete)
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
+        // Trigger biometric when returning from background
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active,
+               appState.authState == .authenticated,
+               appState.biometricService.isBiometricEnabled {
+                appState.attemptBiometricUnlock()
             }
         }
     }
 }
 
-private let itemFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .short
-    formatter.timeStyle = .medium
-    return formatter
-}()
+// MARK: - Biometric Lock Overlay
+struct BiometricLockOverlay: View {
+    @EnvironmentObject var appState: AppState
+
+    var body: some View {
+        ZStack {
+            // Blur the content behind
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .ignoresSafeArea()
+
+            VStack(spacing: SPSpacing.xl) {
+                // App icon / logo
+                ZStack {
+                    Circle()
+                        .fill(Color.spIndigo.opacity(0.12))
+                        .frame(width: 100, height: 100)
+                    Image(systemName: "hands.and.sparkles.fill")
+                        .font(.system(size: 48))
+                        .foregroundStyle(Color.spIndigo)
+                }
+
+                VStack(spacing: 8) {
+                    Text("Supportives")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.spSlate900)
+                    Text("Use \(appState.biometricService.biometricType.rawValue) to unlock")
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color.spSlate600)
+                }
+
+                if let error = appState.biometricError {
+                    Label(error, systemImage: "exclamationmark.triangle.fill")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.spRose)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, SPSpacing.xl)
+                }
+
+                // Retry button
+                Button {
+                    appState.biometricError = nil
+                    appState.attemptBiometricUnlock()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: appState.biometricService.biometricType == .faceID
+                              ? "faceid" : "touchid")
+                            .font(.system(size: 20))
+                        Text("Unlock with \(appState.biometricService.biometricType.rawValue)")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, SPSpacing.xl)
+                    .padding(.vertical, 14)
+                    .background(Color.spIndigo)
+                    .clipShape(Capsule())
+                }
+                .accessibilityLabel("Unlock app using \(appState.biometricService.biometricType.rawValue)")
+
+                // Fallback: sign out
+                Button("Use Password Instead") { appState.logout() }
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.spSlate600)
+            }
+            .padding(SPSpacing.xl)
+        }
+    }
+}
 
 #Preview {
-    ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+    ContentView()
+        .environmentObject(AppState())
 }
