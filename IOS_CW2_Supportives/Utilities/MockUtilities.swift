@@ -1,10 +1,3 @@
+// MockUtilities.swift — superseded by Extensions.swift, Constants.swift, Theme.swift
 import Foundation
-import SwiftUI
-
-struct MockUtilities {
-    static let defaultCornerRadius: CGFloat = 8.0
-    
-    static func generateGreeting() -> String {
-        return "Hello from Utilities!"
-    }
-}
+import Combine
