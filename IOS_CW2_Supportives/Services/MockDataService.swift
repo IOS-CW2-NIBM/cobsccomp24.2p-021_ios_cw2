@@ -29,8 +29,16 @@ final class MockDataService: ObservableObject {
         // Text search
         if !query.isEmpty {
             let q = query.lowercased()
-            result = result.filter {
-                $0.name.lowercased().contains(q) || $0.bio.lowercased().contains(q)
+            result = result.filter { worker in
+                let categoryNames = categories
+                    .filter { worker.categoryIds.contains($0.id) }
+                    .map { $0.name.lowercased() }
+                    .joined(separator: " ")
+
+                return worker.name.lowercased().contains(q)
+                    || worker.bio.lowercased().contains(q)
+                    || worker.languages.joined(separator: " ").lowercased().contains(q)
+                    || categoryNames.contains(q)
             }
         }
 

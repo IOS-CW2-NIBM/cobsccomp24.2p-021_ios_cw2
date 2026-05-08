@@ -27,12 +27,12 @@ final class MapViewModel: ObservableObject {
         subscribeToLocation()
     }
 
-    func loadWorkers(category: ServiceCategory? = nil) {
+    func loadWorkers(category: ServiceCategory? = nil, query: String = "") {
         isLoading = true
         Task {
             try? await Task.sleep(nanoseconds: 200_000_000)
             let coord = locationService.userLocation ?? AppConstants.defaultCoordinate
-            workers   = dataService.fetchWorkers(category: category, sortBy: .distance, from: coord)
+            workers   = dataService.fetchWorkers(category: category, sortBy: .distance, query: query, from: coord)
             isLoading = false
         }
     }

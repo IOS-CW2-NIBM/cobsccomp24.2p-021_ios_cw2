@@ -51,7 +51,7 @@ struct OTPVerificationView: View {
 
                     Group {
                         if case .awaitingOTP(let phone) = viewModel.authState {
-                            Text("Code sent to \(phone)")
+                            Text("Code sent to \(phone.maskedPhone)")
                         } else {
                             Text("Enter the 6-digit OTP")
                         }
@@ -127,6 +127,15 @@ struct OTPVerificationView: View {
                 Spacer(minLength: 32)
             }
 
+            NavigationLink(
+                destination: NameEntryView(viewModel: viewModel)
+                    .environmentObject(appState),
+                isActive: showUsernameForm
+            ) {
+                EmptyView()
+            }
+            .hidden()
+
             if viewModel.isLoading {
                 LoadingOverlay(message: "Verifying…")
                     .transition(.opacity)
@@ -138,9 +147,14 @@ struct OTPVerificationView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
+    private var showUsernameForm: Binding<Bool> {
+        Binding(
+            get: { if case .awaitingUsername = viewModel.authState { return true } else { return false } },
+            set: { if !$0, case .awaitingUsername = viewModel.authState { viewModel.authState = .awaitingOTP(phone: viewModel.fullPhone) } }
+        )
+    }
+
     private func verify() {
-        viewModel.verifyOTP { user in
-            appState.login(user: user)
-        }
+        viewModel.verifyOTP()
     }
 }

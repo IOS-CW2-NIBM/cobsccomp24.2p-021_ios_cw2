@@ -17,15 +17,23 @@ final class AuthViewModel: ObservableObject {
     @Published var errorMessage: String?   = nil
     @Published var otpCountdown: Int       = 0
     @Published var isOTPSent: Bool         = false
+    @Published var username: String        = ""
+    @Published var pendingUser: User?      = nil
 
     // MARK: - Dependencies
     private let authService: AuthService
+    private let notificationService: NotificationService?
     private var cancellables = Set<AnyCancellable>()
 
     var fullPhone: String { "\(countryCode)\(phone.filter { $0.isNumber })" }
 
-    init(authService: AuthService = AuthService()) {
+    init(
+        authService: AuthService = AuthService(),
+        notificationService: NotificationService? = nil
+    ) {
         self.authService = authService
+        self.notificationService = notificationService
+
         authService.$otpCountdown
             .receive(on: RunLoop.main)
             .assign(to: &$otpCountdown)
@@ -46,6 +54,7 @@ final class AuthViewModel: ObservableObject {
             do {
                 try await authService.sendOTP(to: fullPhone)
                 authState = .awaitingOTP(phone: fullPhone)
+                notificationService?.scheduleOTPSent(to: fullPhone)
             } catch let e as AuthError {
                 errorMessage = e.errorDescription
                 HapticFeedback.error()
@@ -57,15 +66,18 @@ final class AuthViewModel: ObservableObject {
     }
 
     // MARK: - Verify OTP
-    func verifyOTP(completion: @escaping (User) -> Void) {
+    func verifyOTP() {
         errorMessage = nil
         isLoading    = true
         Task {
             do {
                 let user = try await authService.verifyOTP(otp, phone: fullPhone)
+                pendingUser = user
+                authState = .awaitingUsername(phone: fullPhone)
+                username = ""
+                otp = ""
                 HapticFeedback.success()
                 isLoading = false
-                completion(user)
             } catch let e as AuthError {
                 errorMessage = e.errorDescription
                 HapticFeedback.error()
@@ -78,6 +90,26 @@ final class AuthViewModel: ObservableObject {
         }
     }
 
+    func finalizeProfile(completion: @escaping (User) -> Void) {
+        guard let pending = pendingUser else {
+            errorMessage = "Unable to complete profile. Please try again."
+            return
+        }
+
+        let trimmedName = username.trimmed
+        guard trimmedName.count >= 2 else {
+            errorMessage = "Please enter a valid name."
+            return
+        }
+
+        var user = pending
+        user.name = trimmedName
+        pendingUser = nil
+        authState = .authenticated
+        notificationService?.scheduleLoginSuccess(for: user)
+        completion(user)
+    }
+
     // MARK: - Resend
     func resendOTP() {
         otp = ""
@@ -85,6 +117,7 @@ final class AuthViewModel: ObservableObject {
             do {
                 try await authService.resendOTP(to: fullPhone)
                 errorMessage = nil
+                notificationService?.scheduleOTPSent(to: fullPhone)
             } catch let e as AuthError {
                 errorMessage = e.errorDescription
             }

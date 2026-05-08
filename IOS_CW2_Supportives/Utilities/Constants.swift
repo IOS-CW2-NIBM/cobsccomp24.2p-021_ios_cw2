@@ -41,10 +41,12 @@ enum AppConstants {
 
     // MARK: - Notification Identifiers
     enum NotificationID {
-        static let bookingConfirmed  = "booking_confirmed"
-        static let bookingReminder   = "booking_reminder"
-        static let statusChanged     = "status_changed"
-        static let reportReceived    = "report_received"
+        static let otpSent          = "otp_sent"
+        static let loginSuccess     = "login_success"
+        static let bookingConfirmed = "booking_confirmed"
+        static let bookingReminder  = "booking_reminder"
+        static let statusChanged    = "status_changed"
+        static let reportReceived   = "report_received"
     }
 
     // MARK: - Animation

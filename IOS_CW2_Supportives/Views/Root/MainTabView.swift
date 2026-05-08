@@ -3,6 +3,7 @@
 
 import SwiftUI
 import Combine
+import UIKit
 
 
 struct MainTabView: View {
@@ -11,7 +12,6 @@ struct MainTabView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            // Tab 1 — Home
             HomeView(
                 dataService: appState.mockDataService,
                 locationService: appState.locationService
@@ -21,34 +21,30 @@ struct MainTabView: View {
             }
             .tag(0)
 
-            // Tab 2 — Search
-            SearchView(
-                dataService: appState.mockDataService,
-                locationService: appState.locationService
-            )
-            .tabItem {
-                Label("Search", systemImage: selectedTab == 1 ? "magnifyingglass.circle.fill" : "magnifyingglass")
-            }
-            .tag(1)
-
-            // Tab 3 — Map
             MapView(
                 dataService: appState.mockDataService,
                 locationService: appState.locationService
             )
             .tabItem {
-                Label("Map", systemImage: selectedTab == 2 ? "map.fill" : "map")
+                Label("Map", systemImage: selectedTab == 1 ? "map.fill" : "map")
+            }
+            .tag(1)
+
+            MyBookingsView()
+            .tabItem {
+                Label("Bookings", systemImage: selectedTab == 2 ? "calendar.badge.checkmark" : "calendar")
             }
             .tag(2)
 
-            // Tab 4 — Bookings
-            MyBookingsView()
+            ProviderDashboardView(
+                workerId: appState.currentUser?.id ?? User.placeholder.id,
+                bookingService: appState.bookingService
+            )
             .tabItem {
-                Label("Bookings", systemImage: selectedTab == 3 ? "calendar.badge.checkmark" : "calendar")
+                Label("My Works", systemImage: selectedTab == 3 ? "wrench.and.screwdriver.fill" : "wrench.and.screwdriver")
             }
             .tag(3)
 
-            // Tab 5 — Profile
             ProfileView(
                 user: appState.currentUser ?? User.placeholder,
                 bookingService: appState.bookingService
@@ -64,11 +60,13 @@ struct MainTabView: View {
         }
         .onChange(of: selectedTab) { _, _ in HapticFeedback.selection() }
         .onAppear {
-            // Style the tab bar
             let appearance = UITabBarAppearance()
-            appearance.configureWithOpaqueBackground()
-            appearance.backgroundColor = UIColor.systemBackground
-            UITabBar.appearance().standardAppearance  = appearance
+            appearance.configureWithTransparentBackground()
+            appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterial)
+            appearance.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.35)
+            appearance.shadowColor = .clear
+
+            UITabBar.appearance().standardAppearance = appearance
             UITabBar.appearance().scrollEdgeAppearance = appearance
         }
     }

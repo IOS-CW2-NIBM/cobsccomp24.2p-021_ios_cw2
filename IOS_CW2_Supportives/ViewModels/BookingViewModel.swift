@@ -7,10 +7,9 @@ import Combine
 
 
 enum BookingStep: Int, CaseIterable {
-    case details   = 0
-    case datetime  = 1
-    case review    = 2
-    case confirmed = 3
+    case datetime  = 0
+    case review    = 1
+    case confirmed = 2
 }
 
 @MainActor
@@ -20,7 +19,7 @@ final class BookingViewModel: ObservableObject {
     @Published var durationHours:  Int        = 2
     @Published var address:        String     = ""
     @Published var notes:          String     = ""
-    @Published var step:           BookingStep = .details
+    @Published var step:           BookingStep = .datetime
 
     // MARK: - Result
     @Published var createdBooking: Booking?   = nil

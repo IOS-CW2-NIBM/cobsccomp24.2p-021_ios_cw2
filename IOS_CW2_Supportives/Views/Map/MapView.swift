@@ -11,6 +11,8 @@ struct MapView: View {
     @StateObject private var viewModel: MapViewModel
     @State private var selectedCategory: ServiceCategory? = nil
     @State private var showWorkerDetail = false
+    @State private var query: String = ""
+    @FocusState private var searchFocused: Bool
 
     init() {
         // Placeholder init — real init in MainTabView injects services
@@ -45,18 +47,63 @@ struct MapView: View {
 
                 // Top controls
                 VStack(spacing: SPSpacing.sm) {
+                    // Search bar
+                    HStack(spacing: SPSpacing.sm) {
+                        HStack(spacing: SPSpacing.sm) {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundStyle(Color.spSlate600)
+                                .font(.system(size: 15))
+                            TextField("Search nearby providers...", text: $query)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled(true)
+                                .focused($searchFocused)
+                                .font(.system(size: 14))
+                                .foregroundStyle(Color.spSlate900)
+                                .onSubmit { viewModel.loadWorkers(category: selectedCategory, query: query) }
+                            if !query.isEmpty {
+                                Button { query = ""; viewModel.loadWorkers(category: selectedCategory, query: "") } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundStyle(Color.spSlate600)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, SPSpacing.md)
+                        .frame(height: 44)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: SPRadius.pill))
+                        .overlay(RoundedRectangle(cornerRadius: SPRadius.pill)
+                            .strokeBorder(Color.spSlate200, lineWidth: 1))
+                        .spSubtleShadow()
+
+                        Button(action: {
+                            viewModel.loadWorkers(category: selectedCategory, query: query)
+                            searchFocused = false
+                        }) {
+                            Text("Search")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(Color.spIndigo)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .background(Color.white)
+                                .clipShape(Capsule())
+                                .spSubtleShadow()
+                        }
+                    }
+                    .padding(.horizontal, SPSpacing.md)
+                    .padding(.top, SPSpacing.sm)
+
                     // Category filter
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: SPSpacing.sm) {
                             AllPillMap(isSelected: selectedCategory == nil) {
                                 selectedCategory = nil
-                                viewModel.loadWorkers()
+                                viewModel.loadWorkers(category: nil, query: query)
                             }
                             ForEach(appState.mockDataService.categories) { cat in
                                 Button {
                                     HapticFeedback.selection()
                                     selectedCategory = (selectedCategory?.id == cat.id ? nil : cat)
-                                    viewModel.loadWorkers(category: selectedCategory)
+                                    viewModel.loadWorkers(category: selectedCategory, query: query)
                                 } label: {
                                     Label(cat.name, systemImage: cat.icon)
                                         .font(.system(size: 12, weight: .semibold))
@@ -70,12 +117,14 @@ struct MapView: View {
                         }
                         .padding(.horizontal, SPSpacing.md)
                     }
-                    .padding(.top, SPSpacing.sm)
                 }
 
-                // Bottom: worker count badge
-                VStack {
+                // Bottom: worker results panel
+                VStack(spacing: 12) {
                     Spacer()
+
+                    resultsPanel
+
                     HStack {
                         Text("\(viewModel.workers.count) providers nearby")
                             .font(SPFont.footnote().weight(.semibold))
@@ -194,5 +243,52 @@ private struct AllPillMap: View {
                 .background(isSelected ? Color.spIndigo : Color.white)
                 .clipShape(Capsule()).spSubtleShadow()
         }
+    }
+}
+
+private extension MapView {
+    var resultsPanel: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(viewModel.workers.isEmpty ? "No providers found" : "Available providers")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(Color.spSlate900)
+                Spacer()
+                Button("Reset") {
+                    query = ""
+                    selectedCategory = nil
+                    viewModel.loadWorkers(category: nil, query: "")
+                }
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.spIndigo)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: SPSpacing.sm) {
+                    ForEach(viewModel.workers) { worker in
+                        Button {
+                            viewModel.select(worker)
+                            showWorkerDetail = true
+                        } label: {
+                            WorkerRowCard(
+                                worker: worker,
+                                categories: appState.mockDataService.categories,
+                                userCoordinate: appState.locationService.userLocation ?? AppConstants.defaultCoordinate
+                            )
+                            .frame(width: 320)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, SPSpacing.md)
+                .padding(.vertical, 4)
+            }
+            .frame(height: 182)
+        }
+        .padding(.vertical, SPSpacing.sm)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: SPRadius.xl))
+        .padding(.horizontal, SPSpacing.md)
+        .shadow(color: Color.black.opacity(0.08), radius: 20, x: 0, y: 8)
     }
 }

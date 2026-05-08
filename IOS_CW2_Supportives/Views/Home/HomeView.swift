@@ -61,10 +61,9 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Top bar (Figma: avatar left, title centre, bell right)
+    // MARK: - Top bar (clean, centered title, notifications)
     var topBar: some View {
         HStack(spacing: SPSpacing.md) {
-            // User avatar initials
             ZStack {
                 Circle()
                     .fill(Color.spIndigo.opacity(0.12))
@@ -76,17 +75,29 @@ struct HomeView: View {
 
             Spacer()
 
-            Text("Supportives")
-                .font(.system(size: 18, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.spIndigo)
+            VStack(spacing: 0) {
+                Text("Supportives")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.spIndigo)
+                Text("Find the right home support")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.spSlate600)
+            }
 
             Spacer()
 
-            // Search icon
-            Button { navigateToSearch = true } label: {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(Color.spSlate900)
+            Button { appState.isShowingNotifications = true } label: {
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: "bell")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(Color.spSlate900)
+                    if appState.unreadNotificationCount > 0 {
+                        Circle()
+                            .fill(Color.spRose)
+                            .frame(width: 10, height: 10)
+                            .offset(x: 6, y: -6)
+                    }
+                }
             }
         }
         .padding(.horizontal, SPSpacing.md)
@@ -134,72 +145,63 @@ struct HomeView: View {
 
     // MARK: - Promotional card (Figma: dark navy blue, "Book your first cleaning today!")
     var promoCard: some View {
-        ZStack(alignment: .bottomLeading) {
-            RoundedRectangle(cornerRadius: SPRadius.lg)
-                .fill(Color(hex: "#1A1F5E"))  // Figma dark navy
-                .frame(height: 110)
-
-            // Decorative circles
-            Circle().fill(.white.opacity(0.05)).frame(width: 120, height: 120)
-                .offset(x: 200, y: -10)
-            Circle().fill(.white.opacity(0.05)).frame(width: 80, height: 80)
-                .offset(x: 240, y: 20)
-
-            HStack(alignment: .bottom) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Book your first\ncleaning today!")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white)
-                        .lineSpacing(2)
-                    Text("Get 20% off on your first\nservice with code \"HELLO\"")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.8))
-                    Button {
-                        selectedCategory = appState.mockDataService.categories.first
-                        navigateToSearch = true
-                    } label: {
-                        Text("Claim Now")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(Color(hex: "#1A1F5E"))
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 6)
-                            .background(Color.white)
-                            .clipShape(Capsule())
+        RoundedRectangle(cornerRadius: SPRadius.lg)
+            .fill(LinearGradient(
+                gradient: Gradient(colors: [Color(hex: "#1A1F5E"), Color(hex: "#25316A")]),
+                startPoint: .topLeading, endPoint: .bottomTrailing))
+            .frame(height: 110)
+            .overlay(
+                HStack {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Save 20% on your first booking")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(.white)
+                        Text("Use code HELLO for home cleaning & support services.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.white.opacity(0.8))
+                            .lineLimit(2)
+                        Button {
+                            selectedCategory = appState.mockDataService.categories.first
+                            navigateToSearch = true
+                        } label: {
+                            Text("Claim offer")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(Color(hex: "#1A1F5E"))
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .background(Color.white)
+                                .clipShape(Capsule())
+                        }
                     }
+                    .padding(SPSpacing.md)
+                    Spacer()
                 }
-                .padding(SPSpacing.md)
-                Spacer()
-            }
-        }
-        .padding(.horizontal, SPSpacing.md)
+            )
+            .padding(.horizontal, SPSpacing.md)
     }
 
     // MARK: - Quick categories (Figma: circle icons, 4 per row)
     var quickCategories: some View {
-        VStack(alignment: .leading, spacing: SPSpacing.md) {
-            HStack {
-                Text("Quick Categories")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(Color.spSlate900)
-                Spacer()
-                Button("See All") {
-                    navigateToSearch = true
-                }
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Color.spIndigo)
+        VStack(alignment: .leading, spacing: SPSpacing.sm) {
+            sectionHeader(title: "Top services", actionTitle: "See All") {
+                selectedCategory = nil
+                navigateToSearch = true
             }
-            .padding(.horizontal, SPSpacing.md)
 
-            // 2-row grid with 4 columns
             let cats = appState.mockDataService.categories
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4),
-                      spacing: SPSpacing.md) {
-                ForEach(cats) { cat in
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3),
+                      spacing: SPSpacing.sm) {
+                ForEach(cats.prefix(6)) { cat in
                     Button {
                         selectedCategory = cat
                         navigateToSearch = true
                     } label: {
                         QuickCategoryItem(category: cat)
+                            .padding(8)
+                            .background(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: SPRadius.lg))
+                            .overlay(RoundedRectangle(cornerRadius: SPRadius.lg)
+                                .strokeBorder(Color.spSlate200.opacity(0.5), lineWidth: 1))
                     }
                     .buttonStyle(.plain)
                 }
@@ -210,107 +212,88 @@ struct HomeView: View {
 
     // MARK: - Map banner (Figma: dark card with "View Workers on Map")
     var mapBanner: some View {
-        ZStack(alignment: .bottomLeading) {
-            RoundedRectangle(cornerRadius: SPRadius.lg)
-                .fill(
-                    LinearGradient(
-                        colors: [Color(hex: "#0F172A"), Color(hex: "#1E3A5F")],
-                        startPoint: .topLeading, endPoint: .bottomTrailing
-                    )
-                )
-                .frame(height: 90)
-
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
-                        // Live avatars
-                        ZStack {
-                            ForEach(0..<3) { i in
-                                Circle()
-                                    .fill(Color.spIndigo.opacity(0.6))
-                                    .frame(width: 22, height: 22)
-                                    .overlay(
-                                        Text(["A","B","C"][i])
-                                            .font(.system(size: 10, weight: .bold))
-                                            .foregroundStyle(.white)
-                                    )
-                                    .offset(x: CGFloat(i * 14))
-                            }
-                        }
-                        .frame(width: 50)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text("LIVE")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundStyle(Color.spEmerald)
-                            Text("WORKERS")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundStyle(.white.opacity(0.7))
-                        }
+        RoundedRectangle(cornerRadius: SPRadius.lg)
+            .fill(LinearGradient(
+                gradient: Gradient(colors: [Color(hex: "#0F172A"), Color(hex: "#1E3A5F")]),
+                startPoint: .topLeading, endPoint: .bottomTrailing))
+            .frame(height: 100)
+            .overlay(
+                HStack {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Live workers near you")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(.white)
+                        Text("Explore available providers on the map.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.white.opacity(0.8))
+                    }
+                    Spacer()
+                    Button { navigateToMap = true } label: {
+                        Text("Open Map")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(Color.spIndigo.opacity(0.95))
+                            .clipShape(RoundedRectangle(cornerRadius: SPRadius.lg))
                     }
                 }
-                .padding(.leading, SPSpacing.md)
-
-                Spacer()
-
-                Button { navigateToMap = true } label: {
-                    Text("View Workers on Map")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(Color.spIndigo)
-                        .clipShape(RoundedRectangle(cornerRadius: SPRadius.md))
-                }
-                .padding(.trailing, SPSpacing.md)
-            }
-            .frame(height: 90)
-        }
-        .padding(.horizontal, SPSpacing.md)
+                .padding(.horizontal, SPSpacing.md)
+            )
+            .padding(.horizontal, SPSpacing.md)
     }
 
     // MARK: - Recent bookings
     var recentBookings: some View {
-        VStack(alignment: .leading, spacing: SPSpacing.md) {
-            HStack {
-                Text("Recent Booking")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(Color.spSlate900)
-                Spacer()
-                Button("View All") {}
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.spIndigo)
+        VStack(alignment: .leading, spacing: SPSpacing.sm) {
+            sectionHeader(title: "Recommended providers", actionTitle: "View All") {
+                selectedCategory = nil
+                navigateToSearch = true
             }
-            .padding(.horizontal, SPSpacing.md)
 
             if viewModel.featuredWorkers.isEmpty {
-                EmptyStateView(icon: "person.slash", title: "No Workers Found",
-                               message: "Pull to refresh.")
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: SPSpacing.md) {
-                        ForEach(viewModel.featuredWorkers) { worker in
-                            NavigationLink {
-                                WorkerProfileView(
-                                    worker: worker,
-                                    dataService: appState.mockDataService,
-                                    bookingService: appState.bookingService,
-                                    notificationService: appState.notificationService,
-                                    calendarService: appState.calendarService
-                                )
-                            } label: {
-                                FigmaWorkerCard(
-                                    worker: worker,
-                                    categories: appState.mockDataService.categories,
-                                    userCoordinate: appState.locationService.userLocation ?? AppConstants.defaultCoordinate
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
+                EmptyStateView(icon: "person.slash", title: "No providers available",
+                               message: "Pull to refresh or try another category.")
                     .padding(.horizontal, SPSpacing.md)
+            } else {
+                LazyVStack(spacing: SPSpacing.md) {
+                    ForEach(viewModel.featuredWorkers) { worker in
+                        NavigationLink {
+                            WorkerProfileView(
+                                worker: worker,
+                                dataService: appState.mockDataService,
+                                bookingService: appState.bookingService,
+                                notificationService: appState.notificationService,
+                                calendarService: appState.calendarService
+                            )
+                        } label: {
+                            FigmaWorkerCard(
+                                worker: worker,
+                                categories: appState.mockDataService.categories,
+                                userCoordinate: appState.locationService.userLocation ?? AppConstants.defaultCoordinate
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, SPSpacing.md)
+                    }
                 }
             }
         }
+    }
+
+    func sectionHeader(title: String, actionTitle: String, action: @escaping () -> Void) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(Color.spSlate900)
+            Spacer()
+            Button(actionTitle) {
+                action()
+            }
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(Color.spIndigo)
+        }
+        .padding(.horizontal, SPSpacing.md)
     }
 }
 
@@ -348,64 +331,83 @@ struct FigmaWorkerCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Avatar area with orange/coloured background
+        VStack(spacing: 0) {
             ZStack(alignment: .topTrailing) {
-                RoundedRectangle(cornerRadius: SPRadius.md)
-                    .fill(workerCategory?.color.opacity(0.15) ?? Color.spSlate50)
-                    .frame(height: 110)
+                RoundedRectangle(cornerRadius: SPRadius.lg)
+                    .fill(workerCategory?.color.opacity(0.22) ?? Color.spSlate50.opacity(0.25))
+                    .frame(height: 160)
 
-                WorkerAvatarView(worker: worker, size: 80, showBadge: true)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, SPSpacing.md)
+                VStack {
+                    HStack {
+                        if worker.isVerified {
+                            VerifiedPillBadge()
+                                .padding(.leading, 14)
+                        }
+                        Spacer()
+                    }
+                    .padding(.top, 12)
 
-                // Rating badge
-                HStack(spacing: 3) {
+                    Spacer()
+
+                    WorkerAvatarView(worker: worker, size: 84, showBadge: false)
+                        .padding(.bottom, 4)
+                }
+
+                HStack(spacing: 6) {
                     Image(systemName: "star.fill")
-                        .font(.system(size: 10))
+                        .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(Color.spAmber)
                     Text(worker.rating.ratingString)
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(Color.spSlate900)
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
                 .background(Color.white)
                 .clipShape(Capsule())
                 .spSubtleShadow()
-                .padding(8)
+                .padding(12)
             }
 
-            // Info
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text(worker.name)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(Color.spSlate900)
                     .lineLimit(1)
 
                 if let cat = workerCategory {
                     Text(cat.name)
-                        .font(.system(size: 12))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(cat.color)
                 }
 
-                HStack(spacing: 3) {
-                    Image(systemName: "location.fill")
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color.spSlate600)
+                HStack(spacing: 6) {
+                    Image(systemName: "mappin.and.ellipse")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.spIndigo)
                     Text(worker.distance(from: userCoordinate).distanceString)
-                        .font(.system(size: 11))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(Color.spSlate600)
                 }
 
-                PrimaryButton(title: "View Profile") {}
-                    .frame(height: 36)
+                HStack(spacing: 8) {
+                    Spacer()
+                    Text("View Profile")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.spIndigo)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(Color.spIndigo.opacity(0.08))
+                        .clipShape(Capsule())
+                }
+                .padding(.top, 6)
             }
-            .padding(SPSpacing.sm)
+            .padding(16)
+            .background(Color.white)
         }
-        .frame(width: 150)
+        .frame(maxWidth: .infinity)
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: SPRadius.lg))
+        .clipShape(RoundedRectangle(cornerRadius: SPRadius.xl))
         .spCardShadow()
     }
 }

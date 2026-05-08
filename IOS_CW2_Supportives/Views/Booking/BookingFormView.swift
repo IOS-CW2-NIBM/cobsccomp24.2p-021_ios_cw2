@@ -53,7 +53,6 @@ struct BookingFormView: View {
                 VStack(spacing: 0) {
                     stepIndicator
                     switch viewModel.step {
-                    case .details:   detailsStep
                     case .datetime:  datetimeStep
                     case .review:    reviewStep
                     case .confirmed: confirmationStep
@@ -66,13 +65,16 @@ struct BookingFormView: View {
                 }
             }
             .animation(.easeInOut(duration: 0.25), value: viewModel.isLoading)
-            .navigationTitle(viewModel.step == .confirmed ? "Request Sent" : "Pick a Date & Time")
+            .navigationTitle(viewModel.step == .confirmed ? "Request Sent" : (viewModel.step == .review ? "Review Booking" : "Pick a Date & Time"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if viewModel.step != .confirmed {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { dismiss() }
-                            .foregroundStyle(Color.spSlate600)
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button(action: { dismiss() }) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundStyle(Color.spSlate900)
+                        }
                     }
                 }
             }
@@ -81,8 +83,10 @@ struct BookingFormView: View {
 
     // MARK: - Step indicator
     var stepIndicator: some View {
-        HStack(spacing: 0) {
-            ForEach([BookingStep.details, .datetime, .review], id: \.rawValue) { step in
+        let steps: [BookingStep] = [.datetime, .review]
+        return HStack(spacing: 0) {
+            ForEach(steps.indices, id: \.self) { index in
+                let step = steps[index]
                 HStack(spacing: 0) {
                     ZStack {
                         Circle()
@@ -93,12 +97,12 @@ struct BookingFormView: View {
                                 .font(.system(size: 12, weight: .bold))
                                 .foregroundStyle(.white)
                         } else {
-                            Text("\(step.rawValue + 1)")
+                            Text("\(index + 1)")
                                 .font(.system(size: 13, weight: .bold))
                                 .foregroundStyle(viewModel.step.rawValue >= step.rawValue ? .white : Color.spSlate600)
                         }
                     }
-                    if step != .review {
+                    if step != steps.last {
                         Rectangle()
                             .fill(viewModel.step.rawValue > step.rawValue ? Color.spIndigo : Color(hex: "#E2E8F0"))
                             .frame(maxWidth: .infinity).frame(height: 2)
@@ -110,93 +114,6 @@ struct BookingFormView: View {
         .padding(.vertical, SPSpacing.md)
         .background(Color.white)
         .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
-    }
-
-    // MARK: - Step 1: Details
-    var detailsStep: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: SPSpacing.lg) {
-                // Worker header
-                HStack(spacing: SPSpacing.md) {
-                    WorkerAvatarView(worker: worker, size: 50)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(worker.name).font(.system(size: 15, weight: .bold)).foregroundStyle(Color.spSlate900)
-                        Text("Schedule your session with \(worker.name.components(separatedBy: " ").first ?? worker.name).")
-                            .font(.system(size: 12)).foregroundStyle(Color.spSlate600)
-                    }
-                    Spacer()
-                }
-                .padding(SPSpacing.md)
-                .background(Color.spSlate50)
-                .clipShape(RoundedRectangle(cornerRadius: SPRadius.md))
-
-                // Duration
-                sectionCard {
-                    VStack(alignment: .leading, spacing: SPSpacing.sm) {
-                        sectionLabel("Duration")
-                        HStack(spacing: SPSpacing.sm) {
-                            ForEach([1, 2, 3, 4, 6, 8], id: \.self) { h in
-                                Button {
-                                    HapticFeedback.selection()
-                                    viewModel.durationHours = h
-                                } label: {
-                                    Text("\(h)h")
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundStyle(viewModel.durationHours == h ? .white : Color.spSlate900)
-                                        .frame(width: 44, height: 38)
-                                        .background(viewModel.durationHours == h ? Color.spIndigo : Color.spSlate50)
-                                        .clipShape(RoundedRectangle(cornerRadius: SPRadius.sm))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: SPRadius.sm)
-                                                .strokeBorder(viewModel.durationHours == h ? .clear : Color.spSlate200, lineWidth: 1.2)
-                                        )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Address
-                sectionCard {
-                    VStack(alignment: .leading, spacing: SPSpacing.sm) {
-                        sectionLabel("Service Address")
-                        TextField("Enter your address", text: $viewModel.address, axis: .vertical)
-                            .font(.system(size: 14)).foregroundStyle(Color.spSlate900)
-                            .lineLimit(2...3)
-                            .padding(SPSpacing.sm)
-                            .background(Color.spSlate50)
-                            .clipShape(RoundedRectangle(cornerRadius: SPRadius.sm))
-                            .overlay(RoundedRectangle(cornerRadius: SPRadius.sm).strokeBorder(Color.spSlate200, lineWidth: 1.2))
-                    }
-                }
-
-                // Notes
-                sectionCard {
-                    VStack(alignment: .leading, spacing: SPSpacing.sm) {
-                        sectionLabel("Special Instructions (Optional)")
-                        TextField("Any special requests…", text: $viewModel.notes, axis: .vertical)
-                            .font(.system(size: 14)).foregroundStyle(Color.spSlate900)
-                            .lineLimit(2...4)
-                            .padding(SPSpacing.sm)
-                            .background(Color.spSlate50)
-                            .clipShape(RoundedRectangle(cornerRadius: SPRadius.sm))
-                            .overlay(RoundedRectangle(cornerRadius: SPRadius.sm).strokeBorder(Color.spSlate200, lineWidth: 1.2))
-                    }
-                }
-
-                if let err = viewModel.errorMessage {
-                    Label(err, systemImage: "exclamationmark.triangle.fill")
-                        .font(.system(size: 13)).foregroundStyle(Color.spRose)
-                }
-
-                PrimaryButton(title: "Next", isDisabled: !viewModel.isFormValid) {
-                    viewModel.nextStep()
-                }
-                .accessibilityHint("Proceed to date and time selection.")
-                .padding(.bottom, SPSpacing.xxl)
-            }
-            .padding(SPSpacing.md)
-        }
     }
 
     // MARK: - Step 2: Date & Time (Figma: calendar + quick slots + Reliability Guarantee)
@@ -269,6 +186,34 @@ struct BookingFormView: View {
                     }
                 }
 
+                // Service address
+                sectionCard {
+                    VStack(alignment: .leading, spacing: SPSpacing.sm) {
+                        sectionLabel("Service Address")
+                        TextField("Enter your address", text: $viewModel.address, axis: .vertical)
+                            .font(.system(size: 14)).foregroundStyle(Color.spSlate900)
+                            .lineLimit(2...3)
+                            .padding(SPSpacing.sm)
+                            .background(Color.spSlate50)
+                            .clipShape(RoundedRectangle(cornerRadius: SPRadius.sm))
+                            .overlay(RoundedRectangle(cornerRadius: SPRadius.sm).strokeBorder(Color.spSlate200, lineWidth: 1.2))
+                    }
+                }
+
+                // Notes
+                sectionCard {
+                    VStack(alignment: .leading, spacing: SPSpacing.sm) {
+                        sectionLabel("Special Instructions (Optional)")
+                        TextField("Any special requests…", text: $viewModel.notes, axis: .vertical)
+                            .font(.system(size: 14)).foregroundStyle(Color.spSlate900)
+                            .lineLimit(2...4)
+                            .padding(SPSpacing.sm)
+                            .background(Color.spSlate50)
+                            .clipShape(RoundedRectangle(cornerRadius: SPRadius.sm))
+                            .overlay(RoundedRectangle(cornerRadius: SPRadius.sm).strokeBorder(Color.spSlate200, lineWidth: 1.2))
+                    }
+                }
+
                 // Reliability Guarantee (Figma)
                 HStack(spacing: SPSpacing.sm) {
                     Image(systemName: "checkmark.shield.fill")
@@ -289,6 +234,12 @@ struct BookingFormView: View {
                 .overlay(RoundedRectangle(cornerRadius: SPRadius.md).strokeBorder(Color.spIndigo.opacity(0.2), lineWidth: 1))
 
                 // Actions
+                if let err = viewModel.errorMessage {
+                    Label(err, systemImage: "exclamationmark.triangle.fill")
+                        .font(.system(size: 13)).foregroundStyle(Color.spRose)
+                        .padding(.bottom, SPSpacing.sm)
+                }
+
                 HStack(spacing: SPSpacing.sm) {
                     Button("Back") { viewModel.previousStep() }
                         .frame(maxWidth: .infinity).frame(height: 50)
@@ -298,8 +249,10 @@ struct BookingFormView: View {
                         .clipShape(Capsule())
                         .overlay(Capsule().strokeBorder(Color.spIndigo, lineWidth: 1.5))
 
-                    PrimaryButton(title: "Confirm Booking →") { viewModel.nextStep() }
-                        .accessibilityHint("Proceed to review your booking summary.")
+                    PrimaryButton(title: "Review Booking →", isDisabled: !viewModel.isFormValid) {
+                        viewModel.nextStep()
+                    }
+                    .accessibilityHint("Proceed to review your booking summary.")
                 }
                 .padding(.bottom, SPSpacing.xxl)
             }
@@ -338,6 +291,11 @@ struct BookingFormView: View {
                     }
                 }
 
+                if let err = viewModel.errorMessage {
+                    Label(err, systemImage: "exclamationmark.triangle.fill")
+                        .font(.system(size: 13)).foregroundStyle(Color.spRose)
+                }
+
                 HStack(spacing: SPSpacing.sm) {
                     Button("Back") { viewModel.previousStep() }
                         .frame(maxWidth: .infinity).frame(height: 50)
@@ -347,7 +305,7 @@ struct BookingFormView: View {
                         .clipShape(Capsule())
                         .overlay(Capsule().strokeBorder(Color.spIndigo, lineWidth: 1.5))
 
-                    PrimaryButton(title: "Confirm \(viewModel.totalAmount.currency)") {
+                    PrimaryButton(title: "Confirm \(viewModel.totalAmount.currency)", isDisabled: !viewModel.isFormValid) {
                         viewModel.confirmBooking(customerId: appState.currentUser?.id ?? UUID())
                     }
                     .accessibilityHint("Submit and confirm your booking request.")

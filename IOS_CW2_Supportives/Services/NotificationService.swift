@@ -30,6 +30,37 @@ final class NotificationService: ObservableObject {
         }
     }
 
+    // MARK: - OTP Sent
+    func scheduleOTPSent(to phone: String) {
+        let content = UNMutableNotificationContent()
+        content.title = "OTP Sent"
+        content.body  = "A verification code has been sent to \(phone). Enter it within the next 2 minutes."
+        content.sound = .default
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        let request = UNNotificationRequest(
+            identifier: "\(AppConstants.NotificationID.otpSent)_\(UUID().uuidString)",
+            content: content,
+            trigger: trigger)
+        center.add(request)
+    }
+
+    // MARK: - Login Success
+    func scheduleLoginSuccess(for user: User) {
+        let content = UNMutableNotificationContent()
+        content.title = "Welcome Back"
+        content.body  = "You are now signed in as \(user.phone) and ready to book services."
+        content.sound = .default
+        content.badge = 1
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        let request = UNNotificationRequest(
+            identifier: "\(AppConstants.NotificationID.loginSuccess)_\(user.id.uuidString)",
+            content: content,
+            trigger: trigger)
+        center.add(request)
+    }
+
     // MARK: - Booking Confirmed
     func scheduleBookingConfirmation(workerName: String, date: Date, bookingId: UUID) {
         let content          = UNMutableNotificationContent()

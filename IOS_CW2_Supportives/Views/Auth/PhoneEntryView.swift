@@ -8,15 +8,33 @@ import Combine
 
 struct PhoneEntryView: View {
     @EnvironmentObject var appState: AppState
-    @StateObject private var viewModel = AuthViewModel()
+    @StateObject private var viewModel: AuthViewModel
     @FocusState private var phoneFieldFocused: Bool
+
+    init(authService: AuthService = AuthService(), notificationService: NotificationService? = nil) {
+        _viewModel = StateObject(wrappedValue: AuthViewModel(
+            authService: authService,
+            notificationService: notificationService
+        ))
+    }
+
+    private let countries: [(flag: String, code: String)] = [
+        ("🇱🇰", "+94"),
+        ("🇺🇸", "+1"),
+        ("🇬🇧", "+44"),
+        ("🇦🇺", "+61"),
+        ("🇮🇳", "+91")
+    ]
+
+    private var selectedCountryFlag: String {
+        countries.first(where: { $0.code == viewModel.countryCode })?.flag ?? "🇱🇰"
+    }
 
     var body: some View {
         NavigationStack {
             ZStack {
-                // Figma: light blue-white gradient background
                 LinearGradient(
-                    colors: [Color(hex: "#EEF2FF"), Color.white],
+                    colors: [Color.white, Color(hex: "#EEF2FF")],
                     startPoint: .top, endPoint: .bottom
                 )
                 .ignoresSafeArea()
@@ -24,14 +42,13 @@ struct PhoneEntryView: View {
                 VStack(spacing: 0) {
                     Spacer(minLength: 40)
 
-                    // Logo + brand
                     VStack(spacing: SPSpacing.sm) {
                         ZStack {
                             Circle()
                                 .fill(Color.spIndigo.opacity(0.12))
-                                .frame(width: 80, height: 80)
-                            Image(systemName: "hands.and.sparkles.fill")
-                                .font(.system(size: 36))
+                                .frame(width: 90, height: 90)
+                            Image(systemName: "mappin.and.ellipse")
+                                .font(.system(size: 36, weight: .bold))
                                 .foregroundStyle(Color.spIndigo)
                         }
                         Text("Supportives")
@@ -41,29 +58,21 @@ struct PhoneEntryView: View {
 
                     Spacer(minLength: 36)
 
-                    // White login card
                     VStack(alignment: .leading, spacing: SPSpacing.lg) {
+                        Text("Login to Your Account")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(Color.spSlate900)
 
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Login to Your Account")
-                                .font(.system(size: 20, weight: .bold))
-                                .foregroundStyle(Color.spSlate900)
-                            Text("Enter your mobile number to receive an OTP")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color.spSlate600)
-                        }
-
-                        // Phone input — flag + code + number
                         HStack(spacing: 0) {
-                            // Country selector
                             Menu {
-                                ForEach([("🇱🇰", "+94"), ("🇺🇸", "+1"), ("🇬🇧", "+44"),
-                                         ("🇦🇺", "+61"), ("🇮🇳", "+91")], id: \.1) { flag, code in
-                                    Button("\(flag) \(code)") { viewModel.countryCode = code }
+                                ForEach(countries, id: \.code) { country in
+                                    Button("\(country.flag) \(country.code)") {
+                                        viewModel.countryCode = country.code
+                                    }
                                 }
                             } label: {
                                 HStack(spacing: 4) {
-                                    Text("🇱🇰")
+                                    Text(selectedCountryFlag)
                                         .font(.system(size: 18))
                                     Text(viewModel.countryCode)
                                         .font(.system(size: 14, weight: .semibold))
@@ -101,7 +110,6 @@ struct PhoneEntryView: View {
                         )
                         .animation(.easeInOut(duration: 0.15), value: phoneFieldFocused)
 
-                        // Error
                         if let err = viewModel.errorMessage {
                             Label(err, systemImage: "exclamationmark.circle.fill")
                                 .font(.system(size: 13))
@@ -117,13 +125,6 @@ struct PhoneEntryView: View {
                             phoneFieldFocused = false
                             viewModel.sendOTP()
                         }
-
-                        // Terms
-                        Text("By continuing, you agree to our Terms of Service and Privacy Policy.")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color.spSlate600)
-                            .multilineTextAlignment(.center)
-                            .frame(maxWidth: .infinity)
                     }
                     .padding(SPSpacing.xl)
                     .background(Color.white)

@@ -29,10 +29,13 @@ struct ContentView: View {
                 .zIndex(1)
             } else {
                 switch appState.authState {
-                case .unauthenticated, .awaitingOTP:
-                    PhoneEntryView()
-                        .environmentObject(appState)
-                        .transition(.opacity)
+                case .unauthenticated, .awaitingOTP, .awaitingUsername:
+                    PhoneEntryView(
+                        authService: appState.authService,
+                        notificationService: appState.notificationService
+                    )
+                    .environmentObject(appState)
+                    .transition(.opacity)
 
                 case .authenticated:
                     MainTabView()

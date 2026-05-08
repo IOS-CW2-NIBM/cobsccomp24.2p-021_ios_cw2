@@ -6,73 +6,109 @@ import Combine
 
 
 struct SplashView: View {
-    @State private var logoScale: CGFloat    = 0.4
-    @State private var logoOpacity: Double   = 0
-    @State private var taglineOffset: CGFloat = 20
-    @State private var taglineOpacity: Double = 0
-    @State private var ringScale: CGFloat    = 0.6
-    @State private var ringOpacity: Double   = 0.8
-
     var body: some View {
         ZStack {
-            // Background gradient
-            LinearGradient.spHeroGradient
-                .ignoresSafeArea()
+            LinearGradient(
+                colors: [Color.white, Color(hex: "#EEF2FF")],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
 
-            // Decorative rings
-            ForEach(0..<3) { i in
-                Circle()
-                    .strokeBorder(.white.opacity(0.08 - Double(i) * 0.02), lineWidth: 1)
-                    .frame(width: CGFloat(200 + i * 80), height: CGFloat(200 + i * 80))
-                    .scaleEffect(ringScale)
-                    .opacity(ringOpacity)
+            VStack(spacing: 40) {
+                Spacer()
+
+                LogoLandingView()
+
+                Text("Supportives")
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.spIndigo)
+
+                Spacer()
+
+                Capsule()
+                    .fill(Color.spIndigo.opacity(0.15))
+                    .frame(width: 120, height: 5)
+                    .padding(.bottom, 24)
             }
-
-            VStack(spacing: SPSpacing.lg) {
-                // App icon
-                ZStack {
-                    Circle()
-                        .fill(.white.opacity(0.15))
-                        .frame(width: 110, height: 110)
-                    Circle()
-                        .fill(.white.opacity(0.2))
-                        .frame(width: 90, height: 90)
-                    Image(systemName: "hands.and.sparkles.fill")
-                        .font(.system(size: 44))
-                        .foregroundStyle(.white)
-                }
-                .scaleEffect(logoScale)
-                .opacity(logoOpacity)
-
-                VStack(spacing: SPSpacing.xs) {
-                    Text("Supportives")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-
-                    Text("Your home, cared for.")
-                        .font(SPFont.callout())
-                        .foregroundStyle(.white.opacity(0.8))
-                        .offset(y: taglineOffset)
-                        .opacity(taglineOpacity)
-                }
-            }
+            .padding(.horizontal, 24)
         }
-        .onAppear { animateIn() }
     }
+}
 
-    private func animateIn() {
-        withAnimation(.spring(response: 0.7, dampingFraction: 0.6)) {
-            logoScale   = 1.0
-            logoOpacity = 1.0
-            ringScale   = 1.2
+private struct LogoLandingView: View {
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Color.spIndigo.opacity(0.12))
+                .frame(width: 220, height: 220)
+                .offset(y: 14)
+
+            LocationPinShape()
+                .fill(LinearGradient(
+                    gradient: Gradient(colors: [Color(hex: "#1F6FFF"), Color(hex: "#0C46C6")]),
+                    startPoint: .top,
+                    endPoint: .bottom))
+                .frame(width: 180, height: 220)
+                .shadow(color: Color.spIndigo.opacity(0.16), radius: 16, x: 0, y: 14)
+
+            Circle()
+                .fill(Color.white)
+                .frame(width: 92, height: 92)
+                .offset(y: -18)
+                .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 8)
+
+            VStack(spacing: 6) {
+                Image(systemName: "face.smiling")
+                    .font(.system(size: 32))
+                    .foregroundStyle(Color.spIndigo)
+                Text("Support")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.spIndigo)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(Color.spIndigo.opacity(0.1))
+                    .clipShape(Capsule())
+            }
+            .offset(y: -22)
+
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.white.opacity(0.4))
+                .frame(width: 80, height: 22)
+                .opacity(0.9)
+                .offset(y: 40)
         }
-        withAnimation(.easeOut(duration: 0.5).delay(0.35)) {
-            taglineOffset  = 0
-            taglineOpacity = 1.0
-        }
-        withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true).delay(0.8)) {
-            ringOpacity = 0.3
-        }
+    }
+}
+
+private struct LocationPinShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let w = rect.width
+        let h = rect.height
+        let circleDiameter = w * 0.6
+        let circleRadius = circleDiameter / 2
+        let circleRect = CGRect(
+            x: (w - circleDiameter) / 2,
+            y: 0,
+            width: circleDiameter,
+            height: circleDiameter)
+
+        var path = Path()
+        path.addEllipse(in: circleRect)
+
+        let bottomY = h
+        let leftControl = CGPoint(x: w * 0.17, y: circleRadius * 1.1)
+        let rightControl = CGPoint(x: w * 0.83, y: circleRadius * 1.1)
+        let bottomPoint = CGPoint(x: w / 2, y: bottomY)
+        let leftPoint = CGPoint(x: w * 0.2, y: circleRadius * 1.5)
+        let rightPoint = CGPoint(x: w * 0.8, y: circleRadius * 1.5)
+
+        path.move(to: leftPoint)
+        path.addQuadCurve(to: bottomPoint, control: CGPoint(x: w * 0.18, y: h * 0.8))
+        path.addQuadCurve(to: rightPoint, control: CGPoint(x: w * 0.82, y: h * 0.8))
+        path.addQuadCurve(to: CGPoint(x: leftPoint.x, y: leftPoint.y), control: CGPoint(x: w / 2, y: h * 0.45))
+
+        return path
     }
 }
 

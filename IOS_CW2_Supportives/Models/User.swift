@@ -9,6 +9,7 @@ import CoreLocation
 enum AuthState: Equatable {
     case unauthenticated
     case awaitingOTP(phone: String)
+    case awaitingUsername(phone: String)
     case authenticated
 }
 

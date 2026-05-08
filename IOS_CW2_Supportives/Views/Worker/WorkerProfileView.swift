@@ -17,7 +17,7 @@ struct WorkerProfileView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var viewModel: WorkerProfileViewModel
     @State private var showReportSheet  = false
-    @State private var showBookingSheet = false
+    @State private var showMissingServiceAlert = false
     @State private var showCallDialog   = false
     @State private var selectedCategory: ServiceCategory?
     @Environment(\.dismiss) private var dismiss
@@ -83,15 +83,16 @@ struct WorkerProfileView: View {
                                        reporterId: appState.currentUser?.id ?? UUID())
             }
         }
-        .sheet(isPresented: $showBookingSheet) {
-            if let cat = selectedCategory {
-                BookingFormView(
-                    worker: worker, category: cat,
-                    bookingService: bookingService,
-                    notificationService: notificationService,
-                    calendarService: calendarService
-                )
-            }
+        .sheet(item: $selectedCategory) { category in
+            BookingFormView(
+                worker: worker,
+                category: category,
+                bookingService: bookingService,
+                notificationService: notificationService,
+                calendarService: calendarService
+            )
+            .environmentObject(appState)
+            .presentationDetents([.large])
         }
         .confirmationDialog("Call this worker?", isPresented: $showCallDialog, titleVisibility: .visible) {
             Button("Call \(worker.name)") {
@@ -101,6 +102,11 @@ struct WorkerProfileView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("You are about to call \(worker.name)")
+        }
+        .alert("Service unavailable", isPresented: $showMissingServiceAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("This worker has no service category selected yet. Please try again later.")
         }
         .onAppear { viewModel.load() }
     }
@@ -359,8 +365,11 @@ struct WorkerProfileView: View {
 
             // Book Now button
             Button {
-                selectedCategory = primaryCategory
-                showBookingSheet = true
+                if let category = primaryCategory {
+                    selectedCategory = category
+                } else {
+                    showMissingServiceAlert = true
+                }
             } label: {
                 Text("Book Now")
                     .font(.system(size: 16, weight: .bold))
